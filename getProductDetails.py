@@ -30,13 +30,23 @@ def sizeof_fmt(num, suffix='B'):
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
+def buildDescription (pos):
+    field = "%s" % productTree.xpath('//div[@class="productText"][%s]/p/text()' % pos)[0]
+    if field:
+        return "%s -" % field
+    else:
+        return ""
+
 INITIAL_URL = 'http://hiring-tests.s3-website-eu-west-1.amazonaws.com/2015_Developer_Scrape/5_products.html'
 
 # Get the HTML code from the given initial URL, parse its content and sace the list of links for each product
 try:
     page = requests.get(INITIAL_URL)
+    print "Getting HTML code from the initial URL"
     tree = html.fromstring(page.content)
+    print "Parsing HTML code"
     productNamesList = tree.xpath('//div[@class="productInfo"]/h3/a/@href')
+    print "Getting the list of product links"
 except:
     e = sys.exc_info()[0]
     print "Error: %s" % e
@@ -64,48 +74,28 @@ try:
         except:
             e = sys.exc_info()[0]
             print "Error: %s" % e
-            productDetails["size"] = "N/A"
+            productDetails["size"] = ""
 
         # Get the product price per unit and update total value
         price = str(productTree.xpath('//p[@class="pricePerUnit"]/text()')[0][2:])
         if not price:
-            productDetails["unit_price"] = "N/A"
+            productDetails["unit_price"] = ""
         else:
             productDetails["unit_price"] = price # Put the value in the product list
             total = total + float(price)
 
         # Build the description value from few details in each page: Description, Country of Origin, Size and Storage
-        description = "%s" % productTree.xpath('//div[@class="productText"][1]/p/text()')[0]
-        if description:
-            description = "%s -" % description
-        else:
-            description = "N/A"
-
-        cor = "%s" % productTree.xpath('//div[@class="productText"][3]/p/text()')[0]
-        if cor:
-            cor = "%s - " % cor
-        else:
-            cor = ""
-
-        productSize = "%s" % productTree.xpath('//div[@class="productText"][4]/p/text()')[0]
-        if productSize:
-            productSize = "%s -" % productSize
-        else:
-            productSize = ""
-
-        storage = "%s" % productTree.xpath('//div[@class="productText"][5]/p/text()')[0]
-        if storage:
-            storage = "%s" % storage
-        else:
-            storage = ""
-
+        description = buildDescription(1)
+        cor = buildDescription(3)
+        productSize = buildDescription(4)
+        storage = buildDescription(5)
         description = "%s %s %s %s" % (description, cor, productSize, storage)
         productDetails["description"] = description # Put the value in the product list
 
         # Get the product title
         title = productTree.xpath('//div[@class="productTitleDescriptionContainer"]/h1/text()')[0]
         if not price:
-            productDetails["title"] = "No Title"
+            productDetails["title"] = ""
         else:
             productDetails["title"] = title # Put the value in the product list
 
@@ -113,8 +103,10 @@ try:
         if "results" not in response:
             response["results"] = list()
         response["results"].append( productDetails )
+        print "Adding the product details list to the response list"
 
     response["total"] = ("%.2f" % total) # Put the total value in the response list
+    print "Adding the total to the response list"
 
     print response # Print out the response list
 except:
