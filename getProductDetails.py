@@ -48,7 +48,7 @@ try:
     productNamesList = tree.xpath('//div[@class="productInfo"]/h3/a/@href')
     print "Getting the list of product links"
 except:
-    e = sys.exc_info()[0]
+    e = sys.exc_info()[1]
     print "Error: %s" % e
     sys.exit(1)
 
